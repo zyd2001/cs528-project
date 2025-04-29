@@ -169,6 +169,8 @@
           };
         };
 
+        networking.firewall.enable = false;
+
         # lock in a release so future upgrades are explicit
         system.stateVersion = lib.trivial.release;
       };
