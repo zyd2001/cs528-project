@@ -20,4 +20,4 @@ with gr.Blocks() as demo:
     upload_button.upload(upload_file, upload_button, file_output)
 
 
-demo.launch()
+demo.launch(server_name="0.0.0.0")

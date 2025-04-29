@@ -84,28 +84,6 @@
         }
       );
 
-      /*
-      # ── single-file Python app ────────────────────────────────
-      gradio-server = pkgs.stdenvNoCC.mkDerivation {
-        pname   = "gradio server";
-        version = "0.0.1";
-        format  = "other";
-        src     = ./server.py;
-        buildInputs = [ venv ];
-
-        unpackPhase  = ''cp $src server.py'';
-        installPhase = ''
-          install -Dm755 server.py $out/bin/gradio-server
-          wrapProgram $out/bin/gradio-server \
-            --set PATH ${lib.makeBinPath (with pkgs; [
-              nodejs_22
-              which
-            ])}
-        '';
-        meta.mainProgram = "gradio-server";
-      };
-      */
-
       # ── NixOS module for the MicroVM ──────────────────────────
       vmModule = {
         lib,
@@ -142,17 +120,24 @@
         # forward host :2222 → guest :22 for SSH
         microvm.forwardPorts = [
           {
+            from = "host";
+            proto = "tcp";
             host.port = 2222;
+            guest.address = "10.0.2.15";  # …to the VM’s SLiRP IP (default 10.0.2.15)…
             guest.port = 22;
           }
           {
+            from = "host";
+            proto = "tcp";
             host.port = 7860;
+            guest.address = "10.0.2.15";  # …to the VM’s SLiRP IP (default 10.0.2.15)…
             guest.port = 7860;
           }
         ];
 
         # inside-guest setup
         services.openssh.enable = true;
+        services.openssh.settings.PermitRootLogin = "yes";
         users.users.root.password = "root";
         environment.systemPackages = [gradio-server];
 
