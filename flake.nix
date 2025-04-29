@@ -38,51 +38,54 @@
   } @ inputs:
     flake-utils.lib.eachDefaultSystem (system: let
       inherit (nixpkgs) lib;
-
-      gradio-server-script = uv2nix.lib.scripts.loadScript {
-        script = ./server.py;
-      };
-
-      # Create package overlay from workspace.
-      overlay = gradio-server-script.mkOverlay {
-        sourcePreference = "wheel"; # or sourcePreference = "sdist";
-      };
+      pkgs = import nixpkgs {inherit system;};
 
       # Use Python 3.12 from nixpkgs
       python = pkgs.python312;
 
-      # Construct package set
-      pythonSet =
-        # Use base package set from pyproject.nix builders
-        (pkgs.callPackage inputs.pyproject-nix.build.packages {
-          inherit python;
-        })
-        .overrideScope
-        (
-          lib.composeManyExtensions [
-            inputs.pyproject-build-systems.overlays.default
-            overlay
-          ]
+      mkScript = script-name: let
+        script = uv2nix.lib.scripts.loadScript {
+          script = script-name;
+        };
+
+        # Create package overlay from workspace.
+        overlay = script.mkOverlay {
+          sourcePreference = "wheel"; # or sourcePreference = "sdist";
+        };
+
+        # Construct package set
+        pythonSet =
+          # Use base package set from pyproject.nix builders
+          (pkgs.callPackage inputs.pyproject-nix.build.packages {
+            inherit python;
+          })
+          .overrideScope
+          (
+            lib.composeManyExtensions [
+              inputs.pyproject-build-systems.overlays.default
+              overlay
+            ]
+          );
+
+        # first build the raw venv
+        rawVenv = script.mkVirtualEnv {inherit pythonSet;};
+
+        # then override its fixupPhase to remove the reflexive link
+        venv = rawVenv.overrideAttrs (old: {
+          fixupPhase = ''
+            echo "→ removing reflexive env-vars symlink from venv"
+            rm -f $out/env-vars
+          '';
+        });
+      in
+        pkgs.writeScriptBin script.name (
+          script.renderScript {
+            inherit venv;
+          }
         );
 
-      # first build the raw venv
-      rawVenv = gradio-server-script.mkVirtualEnv {inherit pythonSet;};
-
-      # then override its fixupPhase to remove the reflexive link
-      venv = rawVenv.overrideAttrs (old: {
-        fixupPhase = ''
-          echo "→ removing reflexive env-vars symlink from venv"
-          rm -f $out/env-vars
-        '';
-      });
-
-      pkgs = import nixpkgs {inherit system;};
-
-      gradio-server = pkgs.writeScriptBin gradio-server-script.name (
-        gradio-server-script.renderScript {
-          inherit venv;
-        }
-      );
+      gradio-server = mkScript ./server.py;
+      exploit = mkScript ./exploit.py;
 
       # ── NixOS module for the MicroVM ──────────────────────────
       vmModule = {
@@ -123,14 +126,14 @@
             from = "host";
             proto = "tcp";
             host.port = 2222;
-            guest.address = "10.0.2.15";  # …to the VM’s SLiRP IP (default 10.0.2.15)…
+            guest.address = "10.0.2.15"; # …to the VM’s SLiRP IP (default 10.0.2.15)…
             guest.port = 22;
           }
           {
             from = "host";
             proto = "tcp";
             host.port = 7860;
-            guest.address = "10.0.2.15";  # …to the VM’s SLiRP IP (default 10.0.2.15)…
+            guest.address = "10.0.2.15"; # …to the VM’s SLiRP IP (default 10.0.2.15)…
             guest.port = 7860;
           }
         ];
@@ -168,9 +171,11 @@
       };
 
       # expose the MicroVM runner script as a package and default app
-      packages.gradio-server-vm = self.nixosConfigurations.${system}.server.config.microvm.declaredRunner;
-      packages.gradio-server = gradio-server;
-      defaultPackage = self.packages.${system}.gradio-server-vm;
+      packages = {
+        inherit gradio-server exploit;
+        gradio-server-vm = self.nixosConfigurations.${system}.server.config.microvm.declaredRunner;
+        default = self.packages.${system}.gradio-server-vm;
+      };
       apps.default = {
         type = "app";
         program = "${self.packages.${system}.gradio-server-vm}/bin/microvm-run";
