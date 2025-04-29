@@ -110,6 +110,11 @@
             mountPoint = config.microvm.writableStoreOverlay;
             size = 8 * 1024; # MiB -> 8 GiB limit :contentReference[oaicite:2]{index=2}
           }
+          {
+            image = "tmp.img";
+            mountPoint = "/tmp";
+            size = 2 * 1024; # MiB -> 8 GiB limit :contentReference[oaicite:2]{index=2}
+          }
         ];
 
         microvm.interfaces = [
