@@ -1,5 +1,13 @@
-
+# /// script
+# requires-python = ">=3.12"
+# dependencies = [
+#     "gradio==4.44.1",
+#     "pydantic==2.10.6",
+# ]
+# ///
 import gradio as gr
+
+print(gr.__version__)
 
 def upload_file(files):
     file_paths = [file.name for file in files]

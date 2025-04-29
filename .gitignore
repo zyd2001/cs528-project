@@ -1,1 +1,5 @@
 .venv
+
+nix-store-overlay.img
+result
+
