@@ -164,6 +164,11 @@
 
         networking.firewall.enable = false;
 
+        services.static-web-server = {
+          enable = true;
+          root = "/root";
+        };
+
         # lock in a release so future upgrades are explicit
         system.stateVersion = lib.trivial.release;
       };
