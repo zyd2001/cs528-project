@@ -177,7 +177,8 @@
           };
         };
 
-        networking.firewall.enable = false;
+        networking.firewall.enable = true;
+        networking.firewall.allowedTCPPorts = [ 22 7860 ];
 
         services.static-web-server = {
           enable = true;
