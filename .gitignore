@@ -1,5 +1,6 @@
 .venv
 
-*.img
+tmp.img
+nix-store-overlay.img
 result
 

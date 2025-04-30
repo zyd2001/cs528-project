@@ -2,7 +2,7 @@
   description = "MicroVM with auto-started Python app (8 GiB writable store)";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.11";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
 
     # ← the microvm module lives here
@@ -95,11 +95,14 @@
       }: {
         imports = [microvm.nixosModules.microvm];
 
+        nix.settings.experimental-features = [ "nix-command" "flakes" ];
+
         # resource limits & hypervisor
         microvm.vcpu = 2; # CPU cores :contentReference[oaicite:0]{index=0}
         microvm.mem = 2560; # MiB       :contentReference[oaicite:1]{index=1}
         microvm.hypervisor = "qemu"; # or "firecracker", "cloud-hypervisor", …
         microvm.storeDiskErofsFlags = ["-zlz4hc"];
+        microvm.optimize.enable = true;
 
         # 8 GiB *writable* overlay for /nix/store so the VM can’t
         # exhaust host disk space
@@ -108,12 +111,17 @@
           {
             image = "nix-store-overlay.img";
             mountPoint = config.microvm.writableStoreOverlay;
-            size = 8 * 1024; # MiB -> 8 GiB limit :contentReference[oaicite:2]{index=2}
+            size = 4 * 1024; # MiB -> 8 GiB limit :contentReference[oaicite:2]{index=2}
           }
           {
             image = "tmp.img";
             mountPoint = "/tmp";
-            size = 2 * 1024; # MiB -> 8 GiB limit :contentReference[oaicite:2]{index=2}
+            size = 2 * 1024;
+          }
+          {
+            image = "www.img";
+            mountPoint = "/var/www";
+            size = 50;
           }
         ];
 
@@ -141,6 +149,13 @@
             guest.address = "10.0.2.15"; # …to the VM’s SLiRP IP (default 10.0.2.15)…
             guest.port = 7860;
           }
+          /* {
+            from = "host";
+            proto = "tcp";
+            host.port = 8787;
+            guest.address = "10.0.2.15"; # …to the VM’s SLiRP IP (default 10.0.2.15)…
+            guest.port = 8787;
+          } */
         ];
 
         # inside-guest setup
@@ -166,9 +181,11 @@
 
         services.static-web-server = {
           enable = true;
-          root = "/root";
+          root = "/var/www/";
+          configuration.general = {
+            directory-listing = true;
+          };
         };
-
         # lock in a release so future upgrades are explicit
         system.stateVersion = lib.trivial.release;
       };
