@@ -111,12 +111,12 @@
           {
             image = "nix-store-overlay.img";
             mountPoint = config.microvm.writableStoreOverlay;
-            size = 4 * 1024; # MiB -> 8 GiB limit :contentReference[oaicite:2]{index=2}
+            size = 8 * 1024; # MiB -> 8 GiB limit :contentReference[oaicite:2]{index=2}
           }
           {
             image = "tmp.img";
             mountPoint = "/tmp";
-            size = 2 * 1024;
+            size = 600;
           }
           {
             image = "www.img";
@@ -171,7 +171,7 @@
           after = ["network-online.target"];
           restartIfChanged = true;
           serviceConfig = {
-            DynamicUser = true;
+            DynamicUser = false;
             ExecStart = lib.getExe gradio-server;
             Restart = "on-failure";
           };
