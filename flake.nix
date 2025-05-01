@@ -116,7 +116,7 @@
           {
             image = "tmp.img";
             mountPoint = "/tmp";
-            size = 600;
+            size = 100;
           }
           {
             image = "www.img";
