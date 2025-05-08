@@ -37,4 +37,10 @@ nix run .#expoit -- <url> # Runs the exploit, downloading the contents of the
                           # url provided to the server
 ```
 
+## Demos
+
+### SSRF Demo with secret extraction and a DoS attack
+
+[Video URL](./videos/demo_with_nix.mp4)
+
 
