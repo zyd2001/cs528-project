@@ -43,4 +43,8 @@ nix run .#expoit -- <url> # Runs the exploit, downloading the contents of the
 
 [Video URL](./videos/demo_with_nix.mp4)
 
+### Demo on copied Hugging Face public application
+
+[Video URL](./videos/demo_with_hugging_face_app.mp4)
+
 
